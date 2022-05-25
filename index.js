@@ -56,6 +56,22 @@ const run = async () => {
          res.send(parts);
       });
 
+      //ADD NEW PARTS
+      app.post("/parts", verifyJWT, async (req, res) => {
+         const part = req.body;
+         const result = await PartsCollection.insertOne(part);
+         res.send(result);
+      });
+      //DELETE PARTS
+      app.delete("/parts/:id", verifyJWT, async (req, res) => {
+         const id = req.params.id;
+         const deleted = await PartsCollection.deleteOne({
+            _id: ObjectId(id),
+         });
+         res.send(deleted);
+         console.log(deleted);
+      });
+
       //GET PART BY ID
       app.get("/parts/:id", verifyJWT, async (req, res) => {
          const part = await PartsCollection.findOne({
@@ -170,6 +186,14 @@ const run = async () => {
          };
          const result = await UsersCollection.updateOne(filter, updateDoc);
          res.send(result);
+      });
+
+      //GET ADMIN
+      app.get("/admin/:email", async (req, res) => {
+         const email = req.params.email;
+         const user = await UsersCollection.findOne({ email: email });
+         const isAdmin = user.role === "admin";
+         res.send({ admin: isAdmin });
       });
    } catch (error) {
       console.log(error);
