@@ -125,6 +125,12 @@ const run = async () => {
 
       //USERS
 
+      //GET ALL USERS
+      app.get("/users", verifyJWT, async (req, res) => {
+         const users = await UsersCollection.find({}).toArray();
+         res.send(users);
+      });
+
       //UPDATE OR CREATE USER
       app.put("/users/:email", async (req, res) => {
          const user = req.body;
