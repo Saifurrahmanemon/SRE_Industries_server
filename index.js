@@ -52,6 +52,18 @@ const run = async () => {
          .db("SRE-Industries")
          .collection("reviews");
 
+      const verifyAdmin = async (req, res, next) => {
+         const requester = req.decoded.email;
+         const account = await UsersCollection.findOne({
+            email: requester,
+         });
+         if (account.role === "admin") {
+            next();
+         } else {
+            res.status(403).send({ message: "forbidden" });
+         }
+      };
+
       //PAYMENT
       app.post("/create-payment-intent", verifyJWT, async (req, res) => {
          const { price } = req.body;
@@ -68,19 +80,19 @@ const run = async () => {
       //ROUTES
 
       //GET ALL PARTS
-      app.get("/parts", async (req, res) => {
+      app.get("/parts", verifyJWT, verifyAdmin, async (req, res) => {
          const parts = await PartsCollection.find({}).toArray();
          res.send(parts);
       });
 
       //ADD NEW PARTS
-      app.post("/parts", verifyJWT, async (req, res) => {
+      app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
          const part = req.body;
          const result = await PartsCollection.insertOne(part);
          res.send(result);
       });
       //DELETE PARTS
-      app.delete("/parts/:id", verifyJWT, async (req, res) => {
+      app.delete("/parts/:id", verifyJWT, verifyAdmin, async (req, res) => {
          const id = req.params.id;
          const deleted = await PartsCollection.deleteOne({
             _id: ObjectId(id),
@@ -245,15 +257,20 @@ const run = async () => {
       //ADMIN
 
       //MAKE ADMIN
-      app.put("/users/admin/:email", verifyJWT, async (req, res) => {
-         const email = req.params.email;
-         const filter = { email: email };
-         const updateDoc = {
-            $set: { role: "admin" },
-         };
-         const result = await UsersCollection.updateOne(filter, updateDoc);
-         res.send(result);
-      });
+      app.put(
+         "/users/admin/:email",
+         verifyJWT,
+         verifyAdmin,
+         async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+               $set: { role: "admin" },
+            };
+            const result = await UsersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+         }
+      );
 
       //GET ADMIN
       app.get("/admin/:email", async (req, res) => {
