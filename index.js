@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 //PORT
 const port = process.env.PORT || 5000;
@@ -44,9 +45,25 @@ const run = async () => {
       const PartsCollection = client.db("SRE-Industries").collection("parts");
       const UsersCollection = client.db("SRE-Industries").collection("users");
       const OrdersCollection = client.db("SRE-Industries").collection("orders");
+      const PaymentCollection = client
+         .db("SRE-Industries")
+         .collection("payment");
       const reviewsCollection = client
          .db("SRE-Industries")
          .collection("reviews");
+
+      //PAYMENT
+      app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+         const { price } = req.body;
+         const amount = price * 100;
+         console.log(amount);
+         const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: "usd",
+            payment_method_types: ["card"],
+         });
+         res.send({ clientSecret: paymentIntent.client_secret });
+      });
 
       //ROUTES
 
@@ -105,6 +122,25 @@ const run = async () => {
          res.send(orders);
       });
 
+      app.patch("/orders/:id", verifyJWT, async (req, res) => {
+         const id = req.params.id;
+         const payment = req.body;
+         const filter = { _id: ObjectId(id) };
+         const updatedDoc = {
+            $set: {
+               paid: true,
+               transactionId: payment.transactionId,
+            },
+         };
+
+         const result = await PaymentCollection.insertOne(payment);
+         const updatedBooking = await OrdersCollection.updateOne(
+            filter,
+            updatedDoc
+         );
+         res.send(updatedBooking);
+      });
+
       //DELETE ORDER
       app.delete("/orders/:id", verifyJWT, async (req, res) => {
          const id = req.params.id;
@@ -112,7 +148,17 @@ const run = async () => {
             _id: ObjectId(id),
          });
          res.send(deleted);
-         console.log(deleted);
+      });
+
+      //GET ORDER BY ID
+      app.get("/order/:id", verifyJWT, async (req, res) => {
+         const id = req.params.id;
+
+         const product = await OrdersCollection.findOne({
+            _id: ObjectId(id),
+         });
+
+         res.send(product);
       });
 
       //POST ORDER BY EMAIL
