@@ -113,6 +113,12 @@ const run = async () => {
 
       // ORDERS
 
+      //GET ALL ORDERS
+      app.get("/orders", verifyJWT, async (req, res) => {
+         const orders = await OrdersCollection.find({}).toArray();
+         res.send(orders);
+      });
+
       //GET  ORDER BY USER EMAIL
       app.get("/orders/:email", verifyJWT, async (req, res) => {
          const orders = await OrdersCollection.find({
@@ -121,6 +127,8 @@ const run = async () => {
 
          res.send(orders);
       });
+
+      //UPDATE ORDER STATUS
 
       app.patch("/orders/:id", verifyJWT, async (req, res) => {
          const id = req.params.id;
@@ -159,6 +167,19 @@ const run = async () => {
          });
 
          res.send(product);
+      });
+
+      //UPDATE ORDER SHIPPING STATUS
+      app.put("/orders/:id", verifyJWT, async (req, res) => {
+         const status = req.body;
+         const id = req.params.id;
+         const filter = { _id: ObjectId(id) };
+
+         const updateDoc = {
+            $set: status,
+         };
+         const result = await OrdersCollection.updateOne(filter, updateDoc);
+         res.send(result);
       });
 
       //POST ORDER BY EMAIL
