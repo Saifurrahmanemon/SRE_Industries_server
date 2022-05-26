@@ -80,7 +80,7 @@ const run = async () => {
       //ROUTES
 
       //GET ALL PARTS
-      app.get("/parts", verifyJWT, verifyAdmin, async (req, res) => {
+      app.get("/parts", async (req, res) => {
          const parts = await PartsCollection.find({}).toArray();
          res.send(parts);
       });
