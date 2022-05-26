@@ -29,8 +29,8 @@ function verifyJWT(req, res, next) {
       next();
    });
 }
-//DATABASE
 
+//DATABASE
 const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri, {
    useNewUrlParser: true,
