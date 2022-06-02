@@ -66,9 +66,9 @@ const run = async () => {
 
       //PAYMENT
       app.post("/create-payment-intent", verifyJWT, async (req, res) => {
-         const { price } = req.body;
-         const amount = price * 100;
-         console.log(amount);
+         const { total } = req.body;
+         const amount = total * 100;
+      
          const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
             currency: "usd",
@@ -241,7 +241,7 @@ const run = async () => {
             options
          );
          const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN, {
-            expiresIn: "1d",
+            expiresIn: "30d",
          });
          res.send({ result, accessToken });
       });
